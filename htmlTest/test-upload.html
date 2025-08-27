@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tester Bailes API</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
+        margin: 24px;
+      }
+      h1,
+      h2 {
+        margin: 12px 0;
+      }
+      form {
+        border: 1px solid #ddd;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+      }
+      label {
+        display: inline-block;
+        width: 140px;
+      }
+      input[type="text"],
+      input[type="number"] {
+        width: 280px;
+      }
+      .row {
+        margin: 6px 0;
+      }
+      .btn {
+        padding: 8px 14px;
+        border: 0;
+        border-radius: 6px;
+        background: #111827;
+        color: #fff;
+        cursor: pointer;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .card img {
+        max-width: 100%;
+        height: 140px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #eee;
+      }
+      pre {
+        background: #0b1020;
+        color: #d1e7ff;
+        padding: 10px;
+        border-radius: 8px;
+        overflow: auto;
+      }
+      small.mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+          "Liberation Mono", monospace;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tester Bailes API</h1>
+    <p>
+      <small class="mono">Base URL: <span id="baseUrl"></span></small>
+    </p>
+
+    <!-- LIST -->
+    <section>
+      <h2>Listar todos</h2>
+      <button class="btn" id="btnList">Load / Refresh</button>
+      <div id="list" class="grid" style="margin-top: 12px"></div>
+    </section>
+
+    <!-- GET BY ID -->
+    <section>
+      <h2>Obtener por ID</h2>
+      <form id="formGetById">
+        <div class="row">
+          <label for="getId">ID:</label>
+          <input type="number" id="getId" required />
+        </div>
+        <button class="btn" type="submit">Get</button>
+      </form>
+      <pre id="outGetById" hidden></pre>
+    </section>
+
+    <!-- CREATE -->
+    <section>
+      <h2>Crear (POST)</h2>
+      <form id="formCreate" enctype="multipart/form-data">
+        <div class="row">
+          <label>Nombre:</label>
+          <input type="text" name="nombre" value="Salsa Ultra" required />
+        </div>
+        <div class="row">
+          <label>Descripción:</label>
+          <input
+            type="text"
+            name="descripcion"
+            value="Clase de salsa para principiantes"
+          />
+        </div>
+        <div class="row">
+          <label>Precio:</label>
+          <input type="number" name="precio" value="200" required />
+        </div>
+        <div class="row">
+          <label>Edad mínima:</label>
+          <input type="number" name="edad_minima" value="12" />
+        </div>
+        <div class="row">
+          <label>Activo:</label>
+          <input type="checkbox" id="createActivo" checked />
+        </div>
+        <div class="row">
+          <label>Imagen (archivo):</label>
+          <input type="file" name="imagen" accept="image/*" required />
+        </div>
+        <div class="row">
+          <small class="mono"
+            >O bien podrías enviar JSON con <code>imagen_url</code> sin
+            archivo.</small
+          >
+        </div>
+        <button class="btn" type="submit">Create</button>
+      </form>
+      <pre id="outCreate" hidden></pre>
+    </section>
+
+    <!-- UPDATE -->
+    <section>
+      <h2>Actualizar por ID (PUT)</h2>
+      <form id="formUpdate" enctype="multipart/form-data">
+        <div class="row">
+          <label>ID:</label>
+          <input type="number" name="id" id="updateId" required />
+        </div>
+        <div class="row">
+          <label>Nombre:</label>
+          <input type="text" name="nombre" placeholder="Nuevo nombre" />
+        </div>
+        <div class="row">
+          <label>Descripción:</label>
+          <input
+            type="text"
+            name="descripcion"
+            placeholder="Nueva descripción"
+          />
+        </div>
+        <div class="row">
+          <label>Precio:</label>
+          <input type="number" name="precio" placeholder="Nuevo precio" />
+        </div>
+        <div class="row">
+          <label>Edad mínima:</label>
+          <input type="number" name="edad_minima" placeholder="Nueva edad" />
+        </div>
+        <div class="row">
+          <label>Activo:</label>
+          <input type="checkbox" id="updateActivo" />
+          <small class="mono">&nbsp;(marcado = true, desmarcado = false)</small>
+        </div>
+        <div class="row">
+          <label>Imagen (opcional):</label>
+          <input type="file" name="imagen" accept="image/*" />
+        </div>
+        <button class="btn" type="submit">Update</button>
+      </form>
+      <pre id="outUpdate" hidden></pre>
+    </section>
+
+    <!-- DELETE -->
+    <section>
+      <h2>Eliminar por ID (DELETE)</h2>
+      <form id="formDelete">
+        <div class="row">
+          <label for="deleteId">ID:</label>
+          <input type="number" id="deleteId" required />
+        </div>
+        <button class="btn" type="submit">Delete</button>
+      </form>
+      <pre id="outDelete" hidden></pre>
+    </section>
+
+    <script>
+      const API_BASE = "http://localhost:3520/api/bailes";
+      document.getElementById("baseUrl").textContent = API_BASE;
+
+      const listEl = document.getElementById("list");
+      const btnList = document.getElementById("btnList");
+
+      function renderJSON(preId, data) {
+        const pre = document.getElementById(preId);
+        pre.hidden = false;
+        pre.textContent = JSON.stringify(data, null, 2);
+      }
+
+      function cardHtml(item) {
+        const img = item.imagen_url
+          ? `<img src="${item.imagen_url}" alt="img">`
+          : "";
+        return `
+        <div class="card">
+          ${img}
+          <div><strong>#${item.id}</strong> — ${item.nombre ?? ""}</div>
+          <div><small>${item.descripcion ?? ""}</small></div>
+          <div><small>Precio: ${item.precio ?? "-"}</small></div>
+          <div><small>Edad mínima: ${item.edad_minima ?? "-"}</small></div>
+          <div><small>Activo: ${item.activo ? "sí" : "no"}</small></div>
+        </div>`;
+      }
+
+      async function loadList() {
+        listEl.innerHTML = "Loading...";
+        try {
+          const r = await fetch(API_BASE);
+          const json = await r.json();
+          const arr = json.data || [];
+          listEl.innerHTML = arr.length
+            ? arr.map(cardHtml).join("")
+            : "<em>No records</em>";
+        } catch (e) {
+          listEl.innerHTML = `<pre>${String(e)}</pre>`;
+        }
+      }
+
+      btnList.addEventListener("click", (e) => {
+        e.preventDefault();
+        loadList();
+      });
+
+      // GET BY ID
+      document
+        .getElementById("formGetById")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const id = document.getElementById("getId").value;
+          if (!id) return;
+          const r = await fetch(`${API_BASE}/${id}`);
+          const json = await r.json();
+          renderJSON("outGetById", json);
+        });
+
+      // CREATE (multipart)
+      document
+        .getElementById("formCreate")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const fd = new FormData(form);
+
+          // checkbox to 1/0
+          const activo = document.getElementById("createActivo").checked
+            ? "1"
+            : "0";
+          fd.append("activo", activo);
+
+          try {
+            const r = await fetch(API_BASE, { method: "POST", body: fd });
+            const json = await r.json();
+            renderJSON("outCreate", json);
+            await loadList();
+          } catch (err) {
+            renderJSON("outCreate", { error: String(err) });
+          }
+        });
+
+      // UPDATE (multipart, optional image)
+      document
+        .getElementById("formUpdate")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const id = document.getElementById("updateId").value;
+          if (!id) return;
+
+          const fd = new FormData();
+
+          const nombre = form.elements["nombre"].value;
+          const descripcion = form.elements["descripcion"].value;
+          const precio = form.elements["precio"].value;
+          const edad_minima = form.elements["edad_minima"].value;
+          const activoChecked = document.getElementById("updateActivo").checked;
+          const imagenFile = form.elements["imagen"].files[0];
+
+          if (nombre) fd.append("nombre", nombre);
+          if (descripcion) fd.append("descripcion", descripcion);
+          if (precio) fd.append("precio", precio);
+          if (edad_minima) fd.append("edad_minima", edad_minima);
+          fd.append("activo", activoChecked ? "1" : "0");
+          if (imagenFile) fd.append("imagen", imagenFile);
+
+          try {
+            const r = await fetch(`${API_BASE}/${id}`, {
+              method: "PUT",
+              body: fd,
+            });
+            const json = await r.json();
+            renderJSON("outUpdate", json);
+            await loadList();
+          } catch (err) {
+            renderJSON("outUpdate", { error: String(err) });
+          }
+        });
+
+      // DELETE
+      document
+        .getElementById("formDelete")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const id = document.getElementById("deleteId").value;
+          if (!id) return;
+          const r = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+          const json = await r.json();
+          renderJSON("outDelete", json);
+          await loadList();
+        });
+
+      // initial load
+      loadList();
+    </script>
+  </body>
+</html>

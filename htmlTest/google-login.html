@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login con Google → Backend</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      body {
+        font-family: system-ui, Arial, sans-serif;
+        max-width: 800px;
+        margin: 24px auto;
+      }
+      pre {
+        background: #111;
+        color: #0f0;
+        padding: 12px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Login con Google (Prueba)</h1>
+
+    <!-- Botón de Google -->
+    <div
+      id="g_id_onload"
+      data-client_id="919542078708-7djd0n1q803o7nfd4n3dv7eps28suuvl.apps.googleusercontent.com"
+      data-callback="handleCredentialResponse"
+    ></div>
+    <div class="g_id_signin" data-type="standard"></div>
+
+    <h3>Respuesta del backend:</h3>
+    <pre id="out">{}</pre>
+
+    <script>
+      const API_LOGIN = "http://localhost:3520/api/auth/google";
+
+      async function handleCredentialResponse(response) {
+        try {
+          // 1) Enviar id_token al backend
+          const r = await fetch(API_LOGIN, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id_token: response.credential }),
+          });
+
+          const json = await r.json();
+          document.getElementById("out").textContent = JSON.stringify(
+            json,
+            null,
+            2
+          );
+
+          if (!r.ok) {
+            console.error("Backend error:", json);
+            alert(
+              "Fallo al autenticar en backend: " +
+                (json?.error?.message || r.status)
+            );
+            return;
+          }
+
+          // 2) Opcional: guardar token en localStorage para probar endpoints protegidos
+          if (json.token) {
+            localStorage.setItem("auth_token", json.token);
+          }
+        } catch (err) {
+          console.error(err);
+          document.getElementById("out").textContent = String(err);
+        }
+      }
+    </script>
+  </body>
+</html>
