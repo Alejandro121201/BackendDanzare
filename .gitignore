@@ -1,26 +1,10 @@
-# Node
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-lock.yaml
-
-# Env / secretos
 .env
-.env.local
-.env.*.local
-
-# Uploads locales (archivos subidos)
 uploads/
 uploads_bailes/
 uploads_eventos/
 uploads_productos/
-
-# Logs
-logs/
 *.log
-
-# Sistema / editor
+.vscode/
 .DS_Store
 Thumbs.db
-.vscode/
